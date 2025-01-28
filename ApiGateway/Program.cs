@@ -3,15 +3,15 @@ using Ocelot.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Добавляем поддержку Ocelot
+// Р”РѕР±Р°РІР»СЏРµРј РїРѕРґРґРµСЂР¶РєСѓ Ocelot
 builder.Services.AddOcelot();
 
-// Загружаем конфигурацию Ocelot из ocelot.json
+// Р—Р°РіСЂСѓР¶Р°РµРј РєРѕРЅС„РёРіСѓСЂР°С†РёСЋ Ocelot РёР· ocelot.json
 builder.Configuration.AddJsonFile("ocelot.json", optional: false, reloadOnChange: true);
 
 var app = builder.Build();
 
-// Подключаем Ocelot middleware
+// РџРѕРґРєР»СЋС‡Р°РµРј Ocelot middleware
 await app.UseOcelot();
 
-app.Run();
+app.Run(); 

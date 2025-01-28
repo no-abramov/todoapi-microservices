@@ -8,12 +8,12 @@ using TasksService.Models.Events;
 using TasksService.Data;
 using TasksService.Models;
 
-namespace TasksService.Service
+namespace TasksService.Services.RabbitMQ
 {
     /// <summary>
     /// Сервис потребителя сообщений из RabbitMQ, который обрабатывает события создания новых пользователей.
     /// </summary>
-    public class RabbitMqUserConsumer : BackgroundService
+    public class AddedUserConsumer : BackgroundService
     {
         private readonly IModel _channel;
         private readonly IServiceProvider _serviceProvider;
@@ -23,7 +23,7 @@ namespace TasksService.Service
         /// </summary>
         /// <param name="connection">Соединение с RabbitMQ</param>
         /// <param name="serviceProvider">Сервис-провайдер для доступа к контексту базы данных</param>
-        public RabbitMqUserConsumer(IConnection connection, IServiceProvider serviceProvider)
+        public AddedUserConsumer(IConnection connection, IServiceProvider serviceProvider)
         {
             _channel = connection.CreateModel();
             _serviceProvider = serviceProvider;

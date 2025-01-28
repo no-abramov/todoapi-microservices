@@ -1,7 +1,11 @@
 ﻿using Asp.Versioning;
 
+using StackExchange.Redis;
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+
+using System.Text.Json;
 
 using TasksService.Data;
 using TasksService.Models;
@@ -23,6 +27,11 @@ namespace TasksService.Controllers
         /// </summary>
         private readonly TasksDbContext _context;
 
+        /// <summary>
+        /// Сервис кэширования Redis.
+        /// </summary>
+        private readonly IDatabase _redisCache;
+
         #endregion
 
         #region Constructor
@@ -31,9 +40,11 @@ namespace TasksService.Controllers
         /// Инициализирует новый экземпляр <see cref="TasksController"/>.
         /// </summary>
         /// <param name="context">Контекст базы данных для задач.</param>
-        public TasksController(TasksDbContext context)
+        /// <param name="redis">Подключение к Redis.</param>
+        public TasksController(TasksDbContext context, IConnectionMultiplexer redis)
         {
             _context = context;
+            _redisCache = redis.GetDatabase();
         }
 
         #endregion
@@ -47,13 +58,39 @@ namespace TasksService.Controllers
         /// <returns>Задача с указанным идентификатором.</returns>
         [HttpGet("user/{userId}")]
         [MapToApiVersion("1.0")]
-        public IActionResult GetTasksByUserId(int userId)
+        public async Task<IActionResult> GetTasksByUserId(int userId)
         {
+            var cacheKey = $"tasks:user:{userId}";
+
+            // Проверяем кэш
+            var cachedTasks = await _redisCache.StringGetAsync(cacheKey);
+
+            // Проверяем, что данные есть в кэше
+            if (cachedTasks.HasValue && !cachedTasks.IsNullOrEmpty)
+            {
+                // Десериализация кэшированных данных
+                var tasksFromCache = JsonSerializer.Deserialize<IEnumerable<TaskItem>>(cachedTasks!);
+                return Ok(new
+                {
+                    Cached = true,
+                    Tasks = tasksFromCache
+                });
+            }
+
+            // Если данных в кэше нет, берём из базы данных
             var tasks = _context.Tasks.Where(t => t.UserId == userId).ToList();
             if (!tasks.Any())
                 return NotFound($"No tasks found for UserId: {userId}");
 
-            return Ok(tasks);
+            // Сохраняем результат в кэш Redis на 10 минут
+            var serializedTasks = JsonSerializer.Serialize(tasks);
+            await _redisCache.StringSetAsync(cacheKey, serializedTasks, TimeSpan.FromMinutes(10));
+
+            return Ok(new
+            {
+                Cached = false,
+                Tasks = tasks
+            });
         }
 
         /// <summary>
@@ -70,6 +107,11 @@ namespace TasksService.Controllers
 
             _context.Tasks.Add(taskItem);
             _context.SaveChanges();
+
+            // Инвалидируем кэш для пользователя
+            var cacheKey = $"tasks:user:{taskItem.UserId}";
+            _redisCache.KeyDelete(cacheKey);
+
             return Ok(taskItem);
         }
 

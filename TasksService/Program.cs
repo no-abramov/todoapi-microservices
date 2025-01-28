@@ -6,8 +6,9 @@ using System.Text;
 using TasksService.Data;
 
 using Asp.Versioning;
-using TasksService.Service;
 using RabbitMQ.Client;
+using TasksService.Services.RabbitMQ;
+using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +19,15 @@ Console.OutputEncoding = Encoding.UTF8;
 // Подключение к локальной базе данных через Entity Framework
 builder.Services.AddDbContext<TasksDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("LocalConnection")));
+
+// Подключение Redis
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+{
+    var redisConnection = builder.Configuration.GetConnectionString("Redis")
+        ?? throw new InvalidOperationException("Redis connection string is missing in appsettings.json");
+
+    return ConnectionMultiplexer.Connect(redisConnection);
+});
 
 // Настройка версий API
 builder.Services.AddApiVersioning(options =>
@@ -44,7 +54,10 @@ var factory = new ConnectionFactory
 builder.Services.AddSingleton<IConnection>(sp => factory.CreateConnection());
 
 // Регистрация RabbitMQ Consumer как фоновую службу
-builder.Services.AddHostedService<RabbitMqUserConsumer>();
+builder.Services.AddHostedService<AddedUserConsumer>();
+
+// Регистрация Redis
+builder.Services.AddScoped<RedisCacheService>();
 
 // Настройка контроллеров
 builder.Services.AddControllers();

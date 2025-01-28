@@ -1,0 +1,78 @@
+services:
+  tasks-service:
+    build:
+      context: .
+      dockerfile: TasksService/Dockerfile
+    ports:
+      - "5291:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: always
+
+  users-service:
+    build:
+      context: .
+      dockerfile: UsersService/Dockerfile
+    ports:
+      - "5290:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: always
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver
+    ports:
+      - "1433:1433"
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=StrongPass@123
+    networks:
+      - app-network
+    restart: always
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: ApiGateway/Dockerfile
+    ports:
+      - "5000:5000"
+    depends_on:
+      - users-service
+      - tasks-service
+    networks:
+      - app-network
+    restart: always
+
+  rabbitmq:
+    image: rabbitmq:3.6-management
+    container_name: rabbitmq
+    hostname: rabbitmq
+    ports:
+      - "5672:5672" # Порт для AMQP
+      - "15672:15672" # Порт для веб-интерфейса управления
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    networks:
+      - app-network
+    restart: always
+
+networks:
+  app-network:
+    driver: bridge

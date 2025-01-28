@@ -1,0 +1,23 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.vs/
+.vscode/
+*.swp
+*.db
+*.DS_Store
+secret.json
+appsettings.json
+appsettings.Development.json
+
+# Rider
+.idea/
+*.sln.iml
+
+# Docker
+docker-compose.override.yml
+
+# Logs
+*.log

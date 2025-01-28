@@ -1,0 +1,119 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>TasksService</name>
+    </assembly>
+    <members>
+        <member name="T:TasksService.Controllers.TasksController">
+            <summary>
+            Контроллер для работы с задачами (Tasks).
+            </summary>
+        </member>
+        <member name="F:TasksService.Controllers.TasksController._context">
+            <summary>
+            Контекст базы данных для работы с задачами.
+            </summary>
+        </member>
+        <member name="M:TasksService.Controllers.TasksController.#ctor(TasksService.Data.TasksDbContext)">
+            <summary>
+            Инициализирует новый экземпляр <see cref="T:TasksService.Controllers.TasksController"/>.
+            </summary>
+            <param name="context">Контекст базы данных для задач.</param>
+        </member>
+        <member name="M:TasksService.Controllers.TasksController.GetTasks">
+            <summary>
+            Получает список всех задач.
+            </summary>
+            <returns>Список задач.</returns>
+        </member>
+        <member name="M:TasksService.Controllers.TasksController.GetTask(System.Int32)">
+            <summary>
+            Получает задачу по её идентификатору.
+            </summary>
+            <param name="id">Идентификатор задачи.</param>
+            <returns>Задача с указанным идентификатором.</returns>
+            <remarks>
+            Требует авторизации JWT.
+            </remarks>
+        </member>
+        <member name="M:TasksService.Controllers.TasksController.CreateTask(TasksService.Models.TaskItem)">
+            <summary>
+            Создаёт новую задачу.
+            </summary>
+            <param name="taskItem">Объект задачи для создания.</param>
+            <returns>Созданная задача с её идентификатором.</returns>
+        </member>
+        <member name="M:TasksService.Controllers.TasksController.UpdateTask(System.Int32,TasksService.Models.TaskItem)">
+            <summary>
+            Обновляет существующую задачу.
+            </summary>
+            <param name="id">Идентификатор задачи для обновления.</param>
+            <param name="taskItem">Обновлённые данные задачи.</param>
+            <returns>Результат обновления (NoContent, BadRequest или NotFound).</returns>
+            <remarks>
+            Требует авторизации JWT.
+            </remarks>
+        </member>
+        <member name="M:TasksService.Controllers.TasksController.DeleteTask(System.Int32)">
+            <summary>
+            Удаляет задачу по её идентификатору.
+            </summary>
+            <param name="id">Идентификатор задачи для удаления.</param>
+            <returns>Результат удаления (NoContent или NotFound).</returns>
+            <remarks>
+            Требует авторизации JWT.
+            </remarks>
+        </member>
+        <member name="M:TasksService.Controllers.TasksController.TaskExists(System.Int32)">
+            <summary>
+            Проверяет, существует ли задача с указанным идентификатором.
+            </summary>
+            <param name="id">Идентификатор задачи.</param>
+            <returns>True, если задача существует; иначе False.</returns>
+        </member>
+        <member name="T:TasksService.Migrations.InitialCreate">
+            <inheritdoc />
+        </member>
+        <member name="M:TasksService.Migrations.InitialCreate.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:TasksService.Migrations.InitialCreate.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:TasksService.Migrations.InitialCreate.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:TasksService.Models.TaskItem">
+            <summary>
+            Представляет задачу в списке дел (TODO).
+            </summary>
+        </member>
+        <member name="P:TasksService.Models.TaskItem.Id">
+            <summary>
+            Уникальный идентификатор задачи.
+            </summary>
+        </member>
+        <member name="P:TasksService.Models.TaskItem.Title">
+            <summary>
+            Название задачи.
+            </summary>
+        </member>
+        <member name="P:TasksService.Models.TaskItem.Description">
+            <summary>
+            Описание задачи.
+            </summary>
+        </member>
+        <member name="P:TasksService.Models.TaskItem.CreatedDate">
+            <summary>
+            Дата создания задачи.
+            Устанавливается автоматически при создании.
+            </summary>
+        </member>
+        <member name="P:TasksService.Models.TaskItem.IsCompleted">
+            <summary>
+            Статус завершения задачи.
+            True, если задача выполнена; False, если нет.
+            </summary>
+        </member>
+    </members>
+</doc>

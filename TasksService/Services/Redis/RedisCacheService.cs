@@ -1,4 +1,5 @@
-﻿using StackExchange.Redis;
+﻿using Microsoft.Extensions.Logging;
+using StackExchange.Redis;
 using System.Text.Json;
 
 /// <summary>
@@ -11,13 +12,16 @@ public class RedisCacheService
     /// </summary>
     private readonly IDatabase _database;
 
+    private readonly ILogger<RedisCacheService> _logger;
+
     /// <summary>
     /// Конструктор, инициализирующий подключение к Redis.
     /// </summary>
     /// <param name="redis">Интерфейс подключения к Redis через IConnectionMultiplexer.</param>
-    public RedisCacheService(IConnectionMultiplexer redis)
+    public RedisCacheService(IConnectionMultiplexer redis, ILogger<RedisCacheService> logger)
     {
         _database = redis.GetDatabase(); // Получение экземпляра базы данных Redis.
+        _logger = logger;
     }
 
     /// <summary>
@@ -30,10 +34,20 @@ public class RedisCacheService
     /// <returns>Асинхронная задача без возвращаемого значения.</returns>
     public async Task SetAsync<T>(string key, T value, TimeSpan? expiry = null)
     {
-        // Сериализация данных в JSON-строку.
-        var json = JsonSerializer.Serialize(value);
-        // Сохранение данных в Redis с указанным временем жизни (если оно задано).
-        await _database.StringSetAsync(key, json, expiry);
+        string storedValue = value is string strValue ? strValue : JsonSerializer.Serialize(value);
+
+        _logger.LogInformation("Setting key {Key} in Redis with value: {Value}", key, storedValue);
+
+        bool result = await _database.StringSetAsync(key, storedValue, expiry);
+
+        if (result)
+        {
+            _logger.LogInformation("Successfully stored key {Key}", key);
+        }
+        else
+        {
+            _logger.LogWarning("Failed to store key {Key}", key);
+        }
     }
 
     /// <summary>
@@ -44,16 +58,24 @@ public class RedisCacheService
     /// <returns>Данные, сохранённые в кэше, или значение по умолчанию, если данные отсутствуют.</returns>
     public async Task<T?> GetAsync<T>(string key)
     {
-        // Получение данных из Redis по ключу.
+        _logger.LogInformation("Retrieving key {Key} from Redis", key);
         var json = await _database.StringGetAsync(key);
 
-        // Проверяем, что json имеет значение и не пустой
         if (!json.HasValue || json.IsNullOrEmpty)
         {
+            _logger.LogWarning("Key {Key} not found in Redis", key);
             return default;
         }
 
-        return JsonSerializer.Deserialize<T>(json!);
+        try
+        {
+            return JsonSerializer.Deserialize<T>(json!);
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex, "Failed to deserialize Redis value for key {Key}", key);
+            return default;
+        }
     }
 
     /// <summary>
@@ -63,7 +85,7 @@ public class RedisCacheService
     /// <returns>Асинхронная задача без возвращаемого значения.</returns>
     public async Task RemoveAsync(string key)
     {
-        // Удаление данных по ключу из Redis.
+        _logger.LogInformation("Removing key {Key} from Redis", key);
         await _database.KeyDeleteAsync(key);
     }
 }
